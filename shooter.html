@@ -5,18 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>☀️ БЛИННЫЙ ШУТЕР · Масленица</title>
     <style>
-        /* ===== СТИЛИ (БЕЗ ИЗМЕНЕНИЙ) ===== */
+        /* ===== СТИЛИ ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { height: 100vh; width: 100vw; overflow: hidden; font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif; background: radial-gradient(circle at 20% 30%, #fbe9d2, #fad0a5); }
+        
         .sky-background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(145deg, #ffdab9 0%, #ffe5b4 40%, #ffd6a5 100%); overflow: hidden; }
         .sun-rays { position: absolute; top: -30px; left: -30px; width: 180px; height: 180px; background: radial-gradient(circle, #ffdd77 0%, rgba(255, 221, 119, 0) 70%); border-radius: 50%; opacity: 0.5; animation: spin 40s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .game-wrapper { position: relative; width: 100%; height: 100%; max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; background: linear-gradient(rgba(255, 222, 191, 0.3), rgba(255, 228, 204, 0.3)), url('bg_1.jpeg') center/cover no-repeat; border-left: 6px solid #d2691e; border-right: 6px solid #d2691e; box-shadow: inset 0 0 30px rgba(160, 80, 20, 0.2); border-radius: 40px; overflow: hidden; }
+        
         .header { flex: 0 0 auto; height: 100px; background: linear-gradient(165deg, #ffecd2, #fcdec2); border-bottom: 8px solid #c28a3b; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 20px rgba(110, 55, 0, 0.25), inset 0 2px 5px rgba(255, 255, 200, 0.8); z-index: 20; margin-bottom: 8px; padding: 0 10px; border-radius: 40px 40px 30px 30px; position: relative; }
         .stat-item { display: flex; flex-direction: column; align-items: center; background: rgba(255, 245, 220, 0.7); padding: 8px 15px; border-radius: 50px; border: 3px solid #d2691e; }
         .stat-label { font-size: 12px; color: #7b3f00; text-transform: uppercase; font-weight: 800; letter-spacing: 2px; text-shadow: 1px 1px 0 #ffd79c; }
         .stat-value { font-size: 28px; font-weight: 900; color: #a0522d; text-shadow: 2px 2px 0 #ffd27f, 3px 3px 0 rgba(0,0,0,0.1); line-height: 1; }
+        
         .lives-row { display: flex; gap: 8px; }
         .life-dot { width: 20px; height: 20px; background: radial-gradient(circle at 30% 30%, #ffc068, #d41a1a); border-radius: 50%; box-shadow: 0 0 0 2px #ffe68f, 0 3px 0 #9c5a2c, inset 0 -2px 5px rgba(0,0,0,0.2); transition: all 0.2s; }
         .life-dot.lost { background: radial-gradient(circle at 30% 30%, #bbb, #6e6e6e); box-shadow: 0 0 0 2px #ccc, 0 3px 0 #555; transform: scale(0.7); opacity: 0.6; }
@@ -36,7 +39,25 @@
         .modal-pause { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(70, 40, 15, 0.6); backdrop-filter: blur(6px); z-index: 150; display: flex; align-items: center; justify-content: center; border-radius: 40px; }
         .hidden { display: none !important; }
 
-        .modal-content { background: #fff7e6; padding: 40px 30px; border-radius: 80px 20px 80px 20px; text-align: center; border: 8px solid #ffb347; box-shadow: 0 20px 40px rgba(120, 60, 20, 0.5), 0 0 0 6px #ffe082; max-width: 90%; position: relative; background: linear-gradient(145deg, #ffefd0, #ffe0b5); }
+        /* Адаптивное модальное окно */
+        .modal-content { 
+            background: #fff7e6; 
+            padding: 40px 30px; 
+            border-radius: 40px; 
+            text-align: center; 
+            border: 8px solid #ffb347; 
+            box-shadow: 0 20px 40px rgba(120, 60, 20, 0.5), 0 0 0 6px #ffe082;
+            width: 90%; 
+            max-width: 500px;
+            position: relative; 
+            background: linear-gradient(145deg, #ffefd0, #ffe0b5); 
+            max-height: 85vh;       
+            overflow-y: auto;       
+            scrollbar-width: none;  
+            -ms-overflow-style: none;
+        }
+        .modal-content::-webkit-scrollbar { display: none; }
+
         .modal-content::before { content: '🥞'; position: absolute; top: -25px; left: -20px; font-size: 60px; transform: rotate(-20deg); filter: drop-shadow(5px 15px 5px rgba(0,0,0,0.2)); }
         .modal-content::after { content: '🍯'; position: absolute; bottom: -25px; right: -25px; font-size: 60px; transform: rotate(15deg); filter: drop-shadow(5px 15px 5px rgba(0,0,0,0.2)); }
 
@@ -70,6 +91,11 @@
             .sound-toggle { width: 50px; height: 50px; font-size: 28px; bottom: 20px; right: 15px; }
             .flavor-item { min-width: 70px; }
             .flavor-preview { width: 40px; height: 40px; }
+            .modal-content { padding: 20px 15px; }
+            .modal-content h1 { font-size: 24px; margin-bottom: 10px; }
+            .flavors-grid { gap: 8px; margin: 15px 0; }
+            .flavor-name { font-size: 11px; }
+            button { padding: 12px 30px; font-size: 18px; }
         }
     </style>
 </head>
@@ -182,7 +208,6 @@
             let loadedImages = 0;
             let pancakeImgs = [];
             let bombImg = new Image();
-            
             for (let i = 0; i < PANCAKE_IMAGES.length; i++) {
                 let img = new Image();
                 img.src = PANCAKE_IMAGES[i];
@@ -191,7 +216,6 @@
                 pancakeImgs.push(img);
             }
             bombImg.src = BOMB_IMAGE;
-
             // === КОНФИГУРАЦИЯ НАЧИНОК ===
             const PANCAKE_TYPES = [
                 { name: '🍯 МЁД', bgColor: '#ffecc2', border: '#fa9a00' },
@@ -280,7 +304,6 @@
                 particles = [];
                 falling = [];
                 for (let r = 0; r < rows; r++) grid[r] = new Array(cols).fill(null);
-                
                 for (let r = 0; r < 5; r++) {
                     for (let c = 0; c < cols; c++) {
                          if (Math.random() > 0.15) {
@@ -311,32 +334,24 @@
 
             function randType() { return Math.floor(Math.random() * PANCAKE_IMAGES.length); }
 
-            // === ИСПРАВЛЕННАЯ ЛОГИКА SNAP (ЧТОБЫ НЕ ОТВАЛИВАЛИСЬ) ===
             function snap(b) {
-                // 1. Сначала находим все ВОЗМОЖНЫЕ клетки вокруг места удара
                 let hitC = Math.round((b.x - offsetX - RADIUS) / DIAMETER);
                 let hitR = Math.round((b.y - RADIUS) / DIAMETER);
                 
-                // Проверяем соседей (включая текущую клетку)
                 let candidates = [
                     {r: hitR, c: hitC},
                     {r: hitR-1, c: hitC}, {r: hitR+1, c: hitC}, 
                     {r: hitR, c: hitC-1}, {r: hitR, c: hitC+1}
                 ];
-
                 let bestSpot = null;
                 let minDist = Infinity;
 
                 for (let cand of candidates) {
-                    // Клетка должна быть внутри поля и пустая
                     if (cand.r >= 0 && cand.r < rows && cand.c >= 0 && cand.c < cols && (!grid[cand.r] || !grid[cand.r][cand.c])) {
-                        
-                        // САМОЕ ВАЖНОЕ: Клетка должна касаться СУЩЕСТВУЮЩЕГО шара или потолка
                         if (hasSolidNeighbor(cand.r, cand.c)) {
                             let cx = offsetX + cand.c * DIAMETER + RADIUS;
                             let cy = cand.r * DIAMETER + RADIUS;
                             let dist = (b.x - cx)**2 + (b.y - cy)**2;
-                            
                             if (dist < minDist) {
                                 minDist = dist;
                                 bestSpot = cand;
@@ -354,12 +369,15 @@
                         if (!matched) {
                             lives--;
                             playMissSound();
-                            if (lives <= 0) { addNewRow(); lives = MAX_LIVES; }
+                            if (lives <= 0) { 
+                                addNewRow(); 
+                                lives = MAX_LIVES; 
+                            }
                             updateUI();
                         }
                     }
 
-                    // === ДОБАВЛЕНИЕ РЯДОВ ЕСЛИ МАЛО ШАРОВ ===
+                    // Добавляем ряды, если поле слишком пустое
                     let count = 0;
                     for(let r=0; r<rows; r++) {
                         for(let c=0; c<cols; c++) {
@@ -369,18 +387,18 @@
                     if(count < 15) {
                         for(let k=0; k<3; k++) addNewRow();
                     }
-                    // =======================================
 
+                    // === ИСПРАВЛЕНО: Проверка проигрыша сразу после всех изменений поля ===
+                    checkEnd();
+                    
                     resetShot();
                 } else {
-                    // Если вдруг не нашли (бывает редко, если пролетел сквозь текстуры) - просто сбрасываем выстрел
-                    resetShot(); 
+                    resetShot();
                 }
             }
 
-            // Вспомогательная функция: проверяет, есть ли опора у клетки
             function hasSolidNeighbor(r, c) {
-                if (r === 0) return true; // Потолок - это опора
+                if (r === 0) return true;
                 let neighbors = [
                     {r: r-1, c: c}, {r: r+1, c: c}, 
                     {r: r, c: c-1}, {r: r, c: c+1}
@@ -450,7 +468,7 @@
             }
 
             function checkBomb(r, c) {
-                let neighbors = [{r:r-1, c}, {r:r+1, c}, {r, c:c-1}, {r, c:c+1}, {r,c}]; 
+                let neighbors = [{r:r-1, c}, {r:r+1, c}, {r, c:c-1}, {r, c:c+1}, {r,c}];
                 let exploded = false;
                 for (let n of neighbors) {
                     if (grid[n.r]?.[n.c]?.type === BOMB_TYPE) {
@@ -494,7 +512,7 @@
             function spawnParticles(x, y, color) {
                 for (let i = 0; i < 5; i++) {
                     particles.push({
-                        x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+                         x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
                         life: 1.0, color: color || '#FFB300'
                     });
                 }
@@ -505,11 +523,29 @@
                 shooter.curr = shooter.next;
                 shooter.next = randType();
                 updateUI();
-                checkEnd();
             }
 
+            // === ИСПРАВЛЕНИЕ: БЕЗОПАСНАЯ ФУНКЦИЯ ПРОВЕРКИ ПРОИГРЫША ===
+            // Проверяет физическое расстояние от самого нижнего блина до стрелка
             function checkEnd() {
-                if (grid[rows-2].some(cell => cell !== null)) endGame();
+                if (!grid) return;
+                
+                // Проходим по всем рядам
+                for (let r = 0; r < rows; r++) {
+                    // Если ряд существует и в нем есть блины
+                    if (grid[r] && grid[r].some(c => c !== null)) {
+                        // Рассчитываем Y координату этого ряда
+                        let rowY = r * DIAMETER + RADIUS;
+                        
+                        // Если блины опустились ниже безопасной черты (близко к стрелку)
+                        // shooter.y - это позиция стрелка. Отступаем 2.5 диаметра вверх.
+                        // Если блины ниже этой точки - конец игры.
+                        if (rowY > shooter.y - DIAMETER * 2.5) {
+                            endGame();
+                            return;
+                        }
+                    }
+                }
             }
 
             function endGame() {
@@ -530,16 +566,17 @@
                 ctx.arc(x, y + 2, r, 0, 2 * Math.PI);
                 ctx.fillStyle = 'rgba(0,0,0,0.15)';
                 ctx.fill();
-
                 if (type === BOMB_TYPE) {
                     ctx.beginPath();
                     ctx.arc(x, y, r, 0, 2 * Math.PI);
                     ctx.fillStyle = '#333';
                     ctx.fill();
                     if (bombImg.complete && bombImg.naturalHeight > 0) {
-                         ctx.save(); ctx.clip(); ctx.drawImage(bombImg, x-r, y-r, r*2, r*2); ctx.restore();
+                         ctx.save();
+                        ctx.clip(); ctx.drawImage(bombImg, x-r, y-r, r*2, r*2); ctx.restore();
                     } else {
-                        ctx.fillStyle = 'white'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='20px Arial'; ctx.fillText('💣', x, y);
+                        ctx.fillStyle = 'white';
+                        ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='20px Arial'; ctx.fillText('💣', x, y);
                     }
                 } else {
                     let img = pancakeImgs[type];
@@ -547,7 +584,6 @@
                     ctx.arc(x, y, r, 0, 2 * Math.PI);
                     ctx.fillStyle = PANCAKE_TYPES[type]?.bgColor || '#FFF';
                     ctx.fill();
-
                     if (img && img.complete && img.naturalHeight > 0) {
                         ctx.save();
                         ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.clip();
@@ -565,7 +601,6 @@
 
             function update() {
                 if (state !== 'PLAYING') return;
-                
                 if (shooter.ball) {
                     let b = shooter.ball;
                     b.x += b.vx; b.y += b.vy;
@@ -580,7 +615,7 @@
                                 }
                             }
                         }
-                    }
+                     }
                     if (b.y > canvas.height + 50) resetShot();
                 }
 
@@ -599,7 +634,6 @@
 
             function draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
                         if (grid[r] && grid[r][c]) drawBall(grid[r][c].x, grid[r][c].y, grid[r][c].type);
@@ -607,7 +641,6 @@
                 }
                 
                 falling.forEach(f => drawBall(f.x, f.y, f.type));
-                
                 particles.forEach(p => {
                     ctx.globalAlpha = p.life;
                     ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fillStyle=p.color; ctx.fill();
@@ -615,7 +648,7 @@
                 ctx.globalAlpha = 1;
 
                 if (state === 'PLAYING') {
-                    // ТРАЕКТОРИЯ (ДЛИННАЯ, 45 ШАГОВ)
+                    // ТРАЕКТОРИЯ
                     if (isAiming && !shooter.ball) {
                         ctx.beginPath();
                         ctx.strokeStyle = '#ff8c42';
@@ -626,7 +659,6 @@
                         let svx = Math.cos(aimAngle) * 20;
                         let svy = Math.sin(aimAngle) * 20;
                         ctx.moveTo(sx, sy);
-                        
                         for (let k = 0; k < 45; k++) {
                             sx += svx;
                             sy += svy;
@@ -663,7 +695,7 @@
                 if (state !== 'PLAYING' || shooter.ball) return;
                 isAiming = true;
                 const p = getPos(e);
-                let dx = p.x - shooter.x, dy = p.y - shooter.y;
+                 let dx = p.x - shooter.x, dy = p.y - shooter.y;
                 if (dy > -10) dy = -10;
                 aimAngle = Math.atan2(dy, dx);
             });
@@ -682,7 +714,6 @@
                     shooter.ball = { x: shooter.x, y: shooter.y, vx: Math.cos(aimAngle)*SPEED, vy: Math.sin(aimAngle)*SPEED, type: shooter.curr };
                 }
             });
-
             function updateUI() {
                 uiScore.innerText = score;
                 uiHigh.innerText = highScore;
