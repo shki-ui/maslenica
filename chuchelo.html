@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Игра: Сожжение Масленицы</title>
+    <style>
+        :root {
+            --orange-fire: #ffcc00;
+            --red-fire: #ff3300;
+            --blue-ice: #0099ff;
+            --modal-grad-win: linear-gradient(135deg, #2b0a0a, #4a2500);
+            --modal-grad-lose: linear-gradient(135deg, #0a152b, #001f33);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(to bottom, #1a1a2e, #0f3460);
+            color: #fff;
+            height: 100dvh; width: 100vw; overflow: hidden; 
+            display: flex; flex-direction: column; align-items: center;
+            padding: 10px; position: relative; touch-action: none;
+        }
+
+        body::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 60%, rgba(255, 150, 50, 0.15) 0%, transparent 80%);
+            z-index: -1; pointer-events: none;
+        }
+
+        header { text-align: center; margin-bottom: 5px; width: 100%; flex-shrink: 0; z-index: 60; }
+        h1 {
+            font-size: 1.5rem; background: linear-gradient(45deg, var(--orange-fire), #ff9966);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(255, 100, 0, 0.5); margin: 5px 0; font-weight: 800;
+        }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 600px; background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px; border-radius: 20px; margin-bottom: 10px;
+            border: 1px solid rgba(255, 153, 0, 0.3); flex-shrink: 0; z-index: 50;
+            backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .info-box { text-align: center; flex: 1; }
+        .info-label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;}
+        .info-value { font-size: 1.3rem; font-weight: 800; color: #fff; text-shadow: 0 0 10px var(--orange-fire); }
+        #timer { color: #4dffea; text-shadow: 0 0 10px var(--blue-ice); }
+
+        #pauseBtn {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white; font-size: 1rem; width: 44px; height: 44px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            margin: 0 15px; flex-shrink: 0; transition: background 0.2s;
+        }
+        #pauseBtn:active { background: rgba(255, 255, 255, 0.3); }
+
+        .game-container {
+            position: relative; width: 100%; max-width: 600px; flex-grow: 1;
+            background: radial-gradient(ellipse at center, #2e1010 0%, #0d0505 100%);
+            border-radius: 20px; overflow: hidden; border: 2px solid #5a2e00;
+            box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0,0,0,0.5);
+            touch-action: none;
+        }
+
+        .scarecrow-background {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-size: cover; background-position: center;
+            opacity: 0.4; z-index: 1; pointer-events: none; filter: grayscale(30%);
+            background-image: url('https://yaart-web-alice-images.s3.yandex.net/0f5691fe034911f189aae69645aa7651:1');
+        }
+
+        /* 🔥 ПЛАМЯ ТЕПЕРЬ НА ЗАДНЕМ ПЛАНЕ (z-index: 2) — позади куклы (z-index: 10) */
+        .fire-container {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 0%; 
+            z-index: 2; /* было 15, теперь под куклой */
+            pointer-events: none;
+            transition: height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            overflow: hidden; border-radius: 0 0 20px 20px;
+        }
+        .fire-image {
+            width: 100%; height: 120%;
+            background-image: url('fire.png');
+            background-size: cover; background-position: center bottom;
+            opacity: 0.85; mix-blend-mode: screen; filter: contrast(1.2) saturate(1.2);
+        }
+
+        #scarecrow-container {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            width: 500px; height: 75%; max-height: 500px; 
+            z-index: 10; /* кукла выше огня */
+            display: flex; justify-content: center; align-items: flex-end; pointer-events: none;
+        }
+        #scarecrow { 
+            width: 100%; height: 100%; object-fit: contain; 
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.8)); 
+            transition: transform 0.3s ease; 
+            position: relative; /* чтобы быть выше огня */
+        }
+
+        .game-object { position: absolute; border-radius: 50%; z-index: 20; cursor: pointer; transition: transform 0.1s; }
+        .game-object:active { transform: scale(0.9); }
+        .game-object::after { content: ''; position: absolute; top: -20px; left: -20px; right: -20px; bottom: -20px; }
+
+        .spark.good {
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, #ffeb3b, #ff5722);
+            box-shadow: 0 0 25px #ff5722, inset 0 0 10px #ffff00;
+            border: 2px solid rgba(255, 255, 200, 0.6);
+            animation: pulseGood 0.8s infinite alternate;
+        }
+        .spark.bad {
+            width: 65px; height: 65px;
+            background: radial-gradient(circle at 30% 30%, #ffcc00, #ff6600);
+            box-shadow: 0 0 25px var(--blue-ice), inset 0 0 15px var(--blue-ice);
+            border: 3px solid var(--blue-ice);
+            animation: pulseBad 1.2s infinite alternate-reverse;
+        }
+
+        @keyframes pulseGood { from { transform: scale(1); box-shadow: 0 0 15px #ff5722; } to { transform: scale(1.1); box-shadow: 0 0 30px #ff5722; } }
+        @keyframes pulseBad { from { transform: scale(1) rotate(0deg); } to { transform: scale(1.05) rotate(5deg); } }
+
+        .fire-progress-bg { position: absolute; bottom: 0; left: 0; right: 0; height: 8px; background: rgba(0,0,0,0.8); z-index: 30; }
+        .fire-progress-bar {
+            width: 0%; height: 100%; background: linear-gradient(90deg, #ff3300, #ffcc00, #ffff00);
+            transition: width 0.3s; box-shadow: 0 -2px 10px var(--orange-fire);
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 100;
+            display: flex; justify-content: center; align-items: center; padding: 20px;
+            backdrop-filter: blur(12px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            background: rgba(30, 20, 20, 0.8); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 30px; border-radius: 30px; text-align: center;
+            max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            transform: translateY(20px) scale(0.95); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
+        .modal-content.win { background: var(--modal-grad-win); border-color: #ff5722; }
+        .modal-content.lose { background: var(--modal-grad-lose); border-color: #0099ff; }
+
+        .modal-header { font-size: 2.2rem; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
+        .win .modal-header { color: #ffcc00;}
+        .lose .modal-header { color: #88ccff; }
+        .modal-subtext { font-size: 1.1rem; color: #ddd; margin-bottom: 25px; line-height: 1.5; }
+
+        .stats-row { 
+            display: flex; justify-content: space-around; 
+            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; 
+            margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-val { font-size: 1.5rem; font-weight: bold; color: #fff; }
+        .stat-lbl { font-size: 0.8rem; color: #aaa; text-transform: uppercase; }
+
+        .big-btn {
+            width: 100%; padding: 20px; font-size: 1.2rem; font-weight: 800;
+            border: none; border-radius: 15px; cursor: pointer; text-transform: uppercase; letter-spacing: 1.5px;
+            color: #fff; position: relative; overflow: hidden; transition: transform 0.1s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(90deg, #ff3300, #ff9900);
+        }
+        .big-btn:active { transform: scale(0.96); }
+
+        .rules-list { text-align: left; margin-bottom: 25px; }
+        .rule-row { display: flex; align-items: center; margin-bottom: 12px; font-size: 1.1rem; }
+        .rule-icon { font-size: 1.6rem; margin-right: 15px; width: 30px; text-align: center;}
+
+        #pauseOverlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.7); z-index: 90;
+            display: none; color: white; font-size: 3rem; font-weight: bold;
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+
+        .click-effect { position: absolute; border-radius: 50%; pointer-events: none; z-index: 50; animation: clickExplode 0.4s ease-out forwards; }
+        @keyframes clickExplode { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.0); opacity: 0; } }
+    </style>
+</head>
+<body>
+    <header><h1>🔥 Масленица 🔥</h1></header>
+    <div class="top-bar">
+        <div class="info-box"><div class="info-label">Искра</div><div id="sparksCounter" class="info-value">0 / 40</div></div>
+        <button id="pauseBtn">⏸️</button>
+        <div class="info-box"><div class="info-label">Время</div><div id="timer" class="info-value">60</div></div>
+    </div>
+    <div class="game-container" id="gameContainer">
+        <div class="scarecrow-background"></div>
+        
+        <!-- 🔥 ПЛАМЯ РАСПОЛОЖЕНО ПЕРЕД ФОНОМ, НО ЗА КУКЛОЙ (z-index 2) -->
+        <div class="fire-container" id="fireContainer"><div class="fire-image"></div></div>
+        
+        <!-- 👵 КУКЛА ПОВЕРХ ОГНЯ (z-index 10) -->
+        <div id="scarecrow-container"><img id="scarecrow" src="chuchelo.png" alt="Масленица"></div>
+        
+        <div class="fire-progress-bg"><div class="fire-progress-bar" id="fireProgress"></div></div>
+        <div id="pauseOverlay">ПАУЗА</div>
+    </div>
+
+    <div class="modal-overlay active" id="startModal">
+        <div class="modal-content">
+            <h2 style="color:var(--orange-fire); text-transform:uppercase; margin-bottom:20px;">Как играть</h2>
+            <div class="rules-list">
+                <div class="rule-row"><span class="rule-icon">🔥</span><span>Лопай <strong>Огненные</strong> шары</span></div>
+                <div class="rule-row"><span class="rule-icon">❄️</span><span>Не трогай шары с <strong>синим ободком</strong></span></div>
+                <div class="rule-row"><span class="rule-icon">🚀</span><span>Чем больше огня, тем <strong>быстрее игра!</strong></span></div>
+            </div>
+            <button class="big-btn" id="startGameBtn">ЗАЖЕЧЬ!</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="finalModal">
+        <div class="modal-content" id="finalContent">
+            <div class="modal-header" id="endTitle">ПОБЕДА!</div>
+            
+            <p class="modal-subtext" id="endText">Масленица сожжена!</p>
+            
+            <div class="stats-row" id="statsRow">
+                <div class="stat-item">
+                    <span class="stat-val" id="statTime">0с</span>
+                    <span class="stat-lbl">Осталось</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val" id="statMistakes">0</span>
+                    <span class="stat-lbl">Ошибки</span>
+                </div>
+            </div>
+
+            <button class="big-btn" id="playAgainBtn">ИГРАТЬ ЕЩЕ</button>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_SPARKS = 40;
+        const INITIAL_TIME = 60;
+        
+        const els = {
+            gameContainer: document.getElementById('gameContainer'),
+            sparksCounter: document.getElementById('sparksCounter'),
+            timerDisplay: document.getElementById('timer'),
+            fireContainer: document.getElementById('fireContainer'),
+            fireProgress: document.getElementById('fireProgress'),
+            pauseBtn: document.getElementById('pauseBtn'),
+            pauseOverlay: document.getElementById('pauseOverlay'),
+            startModal: document.getElementById('startModal'),
+            finalModal: document.getElementById('finalModal'),
+            finalContent: document.getElementById('finalContent'),
+            scarecrow: document.getElementById('scarecrow'),
+            endTitle: document.getElementById('endTitle'),
+            endText: document.getElementById('endText'),
+            statTime: document.getElementById('statTime'),
+            statMistakes: document.getElementById('statMistakes')
+        };
+
+        let state = {
+            collected: 0, mistakes: 0, time: INITIAL_TIME,
+            isPlaying: false, isPaused: false, gameLoopId: null, spawnTimeouts: [] 
+        };
+
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'pop') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                playNote(440, 0, 0.4); playNote(554, 0.1, 0.4); playNote(659, 0.2, 0.6);
+            }
+        }
+
+        function playNote(freq, delay, dur) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime + delay;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+            osc.start(now); osc.stop(now + dur);
+        }
+
+        const vibrate = (ptrn) => { if (navigator.vibrate) navigator.vibrate(ptrn); };
+
+        function initGame() {
+            initAudio();
+            els.startModal.classList.remove('active');
+            els.finalModal.classList.remove('active');
+            state.collected = 0; state.mistakes = 0; state.time = INITIAL_TIME;
+            state.isPlaying = true; state.isPaused = false;
+            clearInterval(state.gameLoopId);
+            state.spawnTimeouts.forEach(t => clearTimeout(t));
+            state.spawnTimeouts = [];
+            document.querySelectorAll('.game-object').forEach(el => el.remove());
+            els.pauseBtn.textContent = '⏸️';
+            els.pauseOverlay.style.display = 'none';
+            els.scarecrow.style.transform = 'scale(1)';
+            updateUI();
+            state.gameLoopId = setInterval(gameTimerTick, 1000);
+            scheduleNextSpawn('good'); scheduleNextSpawn('bad'); 
+        }
+
+        function gameTimerTick() {
+            if (state.isPaused) return;
+            state.time--;
+            els.timerDisplay.textContent = state.time;
+            els.timerDisplay.style.color = state.time <= 10 ? '#ff3300' : '#4dffea';
+            if (state.time <= 0) endGame(false);
+        }
+
+        function getDifficultyMultiplier() { return state.collected / TOTAL_SPARKS; }
+
+        function scheduleNextSpawn(type) {
+            if (!state.isPlaying) return;
+            let delay; const progress = getDifficultyMultiplier();
+            if (type === 'good') delay = 600 - (progress * 300); 
+            else delay = 2000 - (progress * 1400); 
+            delay = delay * (0.8 + Math.random() * 0.4);
+
+            const timerId = setTimeout(() => {
+                if (!state.isPaused) createObject(type === 'bad');
+                scheduleNextSpawn(type);
+            }, delay);
+            state.spawnTimeouts.push(timerId);
+        }
+
+        function createObject(isBad) {
+            const el = document.createElement('div');
+            el.className = `game-object spark ${isBad ? 'bad' : 'good'}`;
+            const size = isBad ? 65 : 60;
+            const maxX = els.gameContainer.offsetWidth - size;
+            const maxY = els.gameContainer.offsetHeight - size;
+            el.style.left = Math.random() * maxX + 'px';
+            el.style.top = Math.random() * maxY + 'px';
+
+            const progress = getDifficultyMultiplier();
+            const baseLife = isBad ? 2500 : 2000;
+            const lifespan = Math.max(800, baseLife - (progress * 1000));
+
+            const removeTimer = setTimeout(() => {
+                if (el.parentNode) { el.style.opacity = 0; setTimeout(() => el.remove(), 200); }
+            }, lifespan);
+
+            const handleTap = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                if (state.isPaused) return;
+                createClickEffect(e, isBad); clearTimeout(removeTimer); el.remove();
+                if (isBad) {
+                    state.mistakes++;
+                    if (state.collected > 0) state.collected = Math.max(0, state.collected - 2); 
+                    playSound('error'); vibrate(100);
+                    els.gameContainer.style.boxShadow = "inset 0 0 50px red";
+                    setTimeout(() => els.gameContainer.style.boxShadow = "", 200);
+                } else {
+                    state.collected++; playSound('pop'); vibrate(10);
+                }
+                updateUI();
+            };
+            el.addEventListener('mousedown', handleTap);
+            el.addEventListener('touchstart', handleTap, {passive: false});
+            els.gameContainer.appendChild(el);
+        }
+
+        function createClickEffect(e, isBad) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const rect = els.gameContainer.getBoundingClientRect();
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.style.left = (clientX - rect.left - 30) + 'px'; 
+            effect.style.top = (clientY - rect.top - 30) + 'px';
+            effect.style.width = '60px'; effect.style.height = '60px';
+            effect.style.background = isBad ? 'rgba(0, 150, 255, 0.5)' : 'rgba(255, 200, 0, 0.5)';
+            els.gameContainer.appendChild(effect);
+            setTimeout(() => effect.remove(), 400);
+        }
+
+        function updateUI() {
+            els.sparksCounter.textContent = `${state.collected} / ${TOTAL_SPARKS}`;
+            const pct = Math.min((state.collected / TOTAL_SPARKS) * 100, 100);
+            els.fireProgress.style.width = `${pct}%`;
+            // Огонь поднимается снизу, но остается под куклой
+            els.fireContainer.style.height = `${pct * 0.8}%`; 
+            if (pct > 0) els.scarecrow.style.transform = `scale(${1 + pct/300}) rotate(${(Math.random()-0.5)*2}deg)`;
+            if (state.collected >= TOTAL_SPARKS) endGame(true);
+        }
+
+        function endGame(win) {
+            state.isPlaying = false;
+            clearInterval(state.gameLoopId);
+            state.spawnTimeouts.forEach(t => clearTimeout(t));
+
+            els.finalModal.classList.add('active');
+            els.finalContent.className = 'modal-content ' + (win ? 'win' : 'lose');
+            els.statTime.textContent = state.time + 'с';
+            els.statMistakes.textContent = state.mistakes;
+
+            if (win) {
+                els.endTitle.textContent = "ПОБЕДА!";
+                els.endText.textContent = "Зима побеждена, тепло пришло!";
+                playSound('win');
+                els.fireContainer.style.height = '100%';
+                vibrate([100, 50, 100, 50, 200]);
+            } else {
+                els.endTitle.textContent = "ЗАМЕРЗЛИ...";
+                els.endText.textContent = "Не хватило огня. Попробуй быстрее!";
+                vibrate(500);
+            }
+        }
+
+        function togglePause() {
+            if (!state.isPlaying) return;
+            state.isPaused = !state.isPaused;
+            if (state.isPaused) { els.pauseBtn.textContent = '▶️'; els.pauseOverlay.style.display = 'flex'; } 
+            else { els.pauseBtn.textContent = '⏸️'; els.pauseOverlay.style.display = 'none'; }
+        }
+
+        document.getElementById('startGameBtn').addEventListener('click', initGame);
+        document.getElementById('playAgainBtn').addEventListener('click', initGame);
+        els.pauseBtn.addEventListener('click', togglePause);
+    </script>
+</body>
+</html>
